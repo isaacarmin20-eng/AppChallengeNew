@@ -1,11 +1,7 @@
 package com.example.mediscreen.ui
 
-<<<<<<< HEAD
 import android.content.Intent
 import android.net.Uri
-import androidx.compose.ui.platform.LocalContext
-=======
->>>>>>> c9ad78042230cb77573f14230fd59c947f12ac91
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,6 +42,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -94,23 +91,16 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     onCategorySelected: (conditionId: String) -> Unit = {}
 ) {
-<<<<<<< HEAD
     val context = LocalContext.current
-=======
->>>>>>> c9ad78042230cb77573f14230fd59c947f12ac91
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
             Button(
-<<<<<<< HEAD
                 onClick = {
                     val intent = Intent(Intent.ACTION_DIAL, Uri.parse("tel:911"))
                     context.startActivity(intent)
                 },
-=======
-                onClick = {},
->>>>>>> c9ad78042230cb77573f14230fd59c947f12ac91
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 20.dp, vertical = 16.dp)

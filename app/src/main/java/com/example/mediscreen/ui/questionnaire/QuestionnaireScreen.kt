@@ -48,15 +48,11 @@ fun QuestionnaireScreen(
     condition: ConditionQuestionnaire,
     onBack: () -> Unit,
     onComplete: (ResultPayload) -> Unit,
-<<<<<<< HEAD
     viewModel: QuestionnaireViewModel = viewModel(
         key = condition.conditionId,
         factory = QuestionnaireViewModel.factory(condition)
-    )) {
-=======
-    viewModel: QuestionnaireViewModel = viewModel(factory = QuestionnaireViewModel.factory(condition))
+    )
 ) {
->>>>>>> c9ad78042230cb77573f14230fd59c947f12ac91
     val uiState by viewModel.uiState.collectAsState()
     val progress = (uiState.currentIndex + 1).toFloat() / uiState.totalQuestions.toFloat()
 

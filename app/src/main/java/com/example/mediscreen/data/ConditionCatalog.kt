@@ -6,7 +6,6 @@ import com.example.mediscreen.data.model.SymptomQuestion
 
 object ConditionCatalog {
 
-<<<<<<< HEAD
     private val questionnaires by lazy {
         listOf(
             heartAttack,
@@ -16,16 +15,7 @@ object ConditionCatalog {
             poisoning
         ).associateBy { it.conditionId }
     }
-=======
-    private val questionnaires = listOf(
-        heartAttack,
-        choking,
-        diabeticEmergency,
-        asthmaAttack,
-        poisoning
-    ).associateBy { it.conditionId }
 
->>>>>>> c9ad78042230cb77573f14230fd59c947f12ac91
     fun findById(conditionId: String): ConditionQuestionnaire? = questionnaires[conditionId]
 
     fun all(): List<ConditionQuestionnaire> = questionnaires.values.toList()

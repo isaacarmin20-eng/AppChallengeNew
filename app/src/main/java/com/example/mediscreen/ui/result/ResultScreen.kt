@@ -1,5 +1,6 @@
 package com.example.mediscreen.ui.result
 
+import androidx.compose.foundation.clickable
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +41,13 @@ import com.example.mediscreen.data.model.ResultPayload
 private val EmergencyRed = Color(0xFFD32F2F)
 private val CautionAmber = Color(0xFFF57C00)
 private val DisclaimerColor = Color(0xFF66737C)
+
+private val PhoneNumberRegex = Regex("""\b1?[-\s]?\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}\b""")
+
+private fun extractPhoneNumber(text: String): String? {
+    val match = PhoneNumberRegex.find(text) ?: return null
+    return match.value
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -142,19 +150,44 @@ fun ResultScreen(
 
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 payload.instructions.forEachIndexed { index, instruction ->
+                    val phoneNumber = extractPhoneNumber(instruction)
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .let { base ->
+                                if (phoneNumber != null) {
+                                    base.clickable {
+                                        val intent = Intent(
+                                            Intent.ACTION_DIAL,
+                                            Uri.parse("tel:${phoneNumber.filter { it.isDigit() }}")
+                                        )
+                                        context.startActivity(intent)
+                                    }
+                                } else {
+                                    base
+                                }
+                            },
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface
                         ),
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
-                        Text(
-                            text = "${index + 1}. $instruction",
-                            modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.bodyLarge,
-                            lineHeight = 22.sp
-                        )
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "${index + 1}. $instruction",
+                                style = MaterialTheme.typography.bodyLarge,
+                                lineHeight = 22.sp
+                            )
+                            if (phoneNumber != null) {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = "Tap to call $phoneNumber",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
                     }
                 }
             }

@@ -60,7 +60,7 @@ private data class EmergencyCategory(
     val conditionId: String? = null
 )
 
-private enum class CategoryIcon {
+enum class CategoryIcon {
     FaceSpeech,
     Breathing,
     AllergicReaction,
@@ -85,6 +85,9 @@ private val EmergencyCategories = listOf(
     EmergencyCategory("Asthma Attack", CategoryIcon.AsthmaAttack, conditionId = "asthma_attack"),
     EmergencyCategory("Poisoning/Overdose", CategoryIcon.Poisoning, conditionId = "poisoning")
 )
+
+fun iconForConditionId(conditionId: String): CategoryIcon? =
+    EmergencyCategories.firstOrNull { it.conditionId == conditionId }?.icon
 
 @Composable
 fun HomeScreen(
@@ -240,7 +243,7 @@ private fun CategoryCard(
 }
 
 @Composable
-private fun MedicalCategoryIcon(
+fun MedicalCategoryIcon(
     icon: CategoryIcon,
     modifier: Modifier = Modifier
 ) {

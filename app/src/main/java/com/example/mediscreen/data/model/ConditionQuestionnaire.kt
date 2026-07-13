@@ -1,5 +1,7 @@
 package com.example.mediscreen.data.model
 
+import androidx.compose.ui.graphics.Color
+
 data class ConditionQuestionnaire(
     val conditionId: String,
     val displayName: String,
@@ -9,5 +11,7 @@ data class ConditionQuestionnaire(
     val urgentThreshold: Int,
     val urgentInstructions: List<String>,
     val nonUrgentInstructions: List<String>,
-    val footnote: String? = null
+    val footnote: String? = null,
+    val themeColor: Color = Color(0xFF087EA4),
+    val waitingTip: String? = null
 )

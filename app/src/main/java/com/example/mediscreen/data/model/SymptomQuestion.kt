@@ -11,5 +11,6 @@ data class SymptomQuestion(
     val prompt: String,
     val type: QuestionType = QuestionType.YesNo,
     val options: List<String> = emptyList(),
-    val weight: Int = 1
+    val weight: Int = 1,
+    val rationale: String? = null
 )

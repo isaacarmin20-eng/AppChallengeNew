@@ -1,7 +1,7 @@
 package com.example.mediscreen.data
 
+import androidx.compose.ui.graphics.Color
 import com.example.mediscreen.data.model.ConditionQuestionnaire
-import com.example.mediscreen.data.model.QuestionType
 import com.example.mediscreen.data.model.SymptomQuestion
 
 object ConditionCatalog {
@@ -25,6 +25,8 @@ object ConditionCatalog {
         displayName = "Chest Pain / Heart Attack",
         protocolBasis = "Standard cardiac emergency signs",
         footnote = "Women often experience atypical signs such as nausea, fatigue, or jaw pain without classic chest pressure.",
+        themeColor = Color(0xFFD64550),
+        waitingTip = "Keep the person sitting or lying down and calm while you finish this screening.",
         questions = listOf(
             SymptomQuestion(
                 id = "chest_pain",
@@ -32,7 +34,8 @@ object ConditionCatalog {
             ),
             SymptomQuestion(
                 id = "radiating_pain",
-                prompt = "Is the pain spreading to an arm, shoulder, neck, or jaw?"
+                prompt = "Is the pain spreading to an arm, shoulder, neck, or jaw?",
+                rationale = "Pain that spreads to the arm, neck, or jaw is a classic warning sign of a heart attack."
             ),
             SymptomQuestion(
                 id = "shortness_of_breath",
@@ -40,7 +43,8 @@ object ConditionCatalog {
             ),
             SymptomQuestion(
                 id = "nausea",
-                prompt = "Is there nausea, unexplained fatigue, or feeling faint?"
+                prompt = "Is there nausea, unexplained fatigue, or feeling faint?",
+                rationale = "These signs are often overlooked, especially in women, but can indicate a heart attack."
             )
         ),
         urgentThreshold = 2,
@@ -61,6 +65,8 @@ object ConditionCatalog {
         conditionId = "choking",
         displayName = "Choking",
         protocolBasis = "Heimlich/choking response",
+        themeColor = Color(0xFF0288D1),
+        waitingTip = "If the person cannot breathe at all, don't wait for these questions — act immediately.",
         questions = listOf(
             SymptomQuestion(
                 id = "cant_speak",
@@ -68,7 +74,8 @@ object ConditionCatalog {
             ),
             SymptomQuestion(
                 id = "clutching_throat",
-                prompt = "Is the person clutching their throat (universal choking sign)?"
+                prompt = "Is the person clutching their throat (universal choking sign)?",
+                rationale = "Clutching the throat is the universally recognized sign of choking."
             )
         ),
         urgentThreshold = 1,
@@ -89,6 +96,8 @@ object ConditionCatalog {
         conditionId = "diabetic_emergency",
         displayName = "Diabetic Emergency",
         protocolBasis = "Hypoglycemia response",
+        themeColor = Color(0xFF7B61FF),
+        waitingTip = "Stay nearby and keep the person from driving or operating machinery while you finish this screening.",
         questions = listOf(
             SymptomQuestion(
                 id = "known_diabetic",
@@ -96,7 +105,8 @@ object ConditionCatalog {
             ),
             SymptomQuestion(
                 id = "confusion",
-                prompt = "Is the person confused, unusually drowsy, or difficult to wake?"
+                prompt = "Is the person confused, unusually drowsy, or difficult to wake?",
+                rationale = "Confusion or drowsiness can signal dangerously low blood sugar that needs urgent care."
             ),
             SymptomQuestion(
                 id = "shakiness",
@@ -125,6 +135,8 @@ object ConditionCatalog {
         conditionId = "asthma_attack",
         displayName = "Severe Asthma Attack",
         protocolBasis = "Asthma emergency protocol",
+        themeColor = Color(0xFF00897B),
+        waitingTip = "Help the person stay upright and keep their rescue inhaler within reach while you finish this screening.",
         questions = listOf(
             SymptomQuestion(
                 id = "known_asthma",
@@ -136,7 +148,8 @@ object ConditionCatalog {
             ),
             SymptomQuestion(
                 id = "inhaler_not_helping",
-                prompt = "Is a rescue inhaler not helping or unavailable?"
+                prompt = "Is a rescue inhaler not helping or unavailable?",
+                rationale = "If a rescue inhaler isn't helping, the airway may be closing further and needs emergency treatment."
             )
         ),
         urgentThreshold = 2,
@@ -157,10 +170,13 @@ object ConditionCatalog {
         conditionId = "poisoning",
         displayName = "Poisoning / Overdose",
         protocolBasis = "Poison Control/911 guidance — recognition only, no substance-specific advice",
+        themeColor = Color(0xFFEF6C00),
+        waitingTip = "Stay with the person and keep them calm while you finish this screening.",
         questions = listOf(
             SymptomQuestion(
                 id = "unresponsive",
-                prompt = "Is the person unresponsive or not waking up?"
+                prompt = "Is the person unresponsive or not waking up?",
+                rationale = "Unresponsiveness is one of the strongest signs of a life-threatening emergency."
             ),
             SymptomQuestion(
                 id = "vomiting",

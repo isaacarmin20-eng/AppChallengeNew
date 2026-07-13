@@ -1,9 +1,5 @@
 package com.example.mediscreen.ui.questionnaire
 
-import androidx.compose.foundation.rememberScrollState
-
-import androidx.compose.foundation.verticalScroll
-
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.animation.Crossfade
@@ -29,7 +25,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -92,7 +87,6 @@ fun QuestionnaireScreen(
     val uiState by viewModel.uiState.collectAsState()
     val theme = condition.themeColor
     val icon = remember(condition.conditionId) { iconForConditionId(condition.conditionId) }
-    val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
@@ -126,9 +120,9 @@ fun QuestionnaireScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(scrollState)
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 // Item 3: segmented step progress indicator
@@ -144,7 +138,7 @@ fun QuestionnaireScreen(
                     text = uiState.progressText,
                     style = MaterialTheme.typography.labelMedium,
                     color = theme,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.SemiBold
                 )
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -203,6 +197,7 @@ fun QuestionnaireScreen(
                             options = uiState.currentQuestion.options,
                             currentAnswer = uiState.currentAnswer,
                             accentColor = theme,
+                            isLastQuestion = uiState.isLastQuestion,
                             onYesNo = { yes -> viewModel.answerCurrentQuestion(QuestionAnswer.YesNo(yes)) },
                             onSingleSelect = { option ->
                                 viewModel.answerCurrentQuestion(QuestionAnswer.SingleSelect(option))
@@ -217,12 +212,12 @@ fun QuestionnaireScreen(
             Column(modifier = Modifier.fillMaxWidth()) {
                 condition.waitingTip?.let { tip ->
                     WaitingTipCard(tip = tip, accentColor = theme)
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(26.dp))
                 }
 
                 EmergencyShortcut()
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
                 if (uiState.canGoBack) {
                     OutlinedButton(
@@ -235,7 +230,7 @@ fun QuestionnaireScreen(
                         Text("Previous question")
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
 
                 if (uiState.isLastQuestion) {
@@ -255,7 +250,7 @@ fun QuestionnaireScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
                 }
 
                 // Item 6: reassurance strip to fill empty space intentionally
@@ -268,36 +263,37 @@ fun QuestionnaireScreen(
                         imageVector = Icons.Filled.Lock,
                         contentDescription = null,
                         tint = DisclaimerColor,
-                        modifier = Modifier.size(14.dp)
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.size(6.dp))
+                    Spacer(modifier = Modifier.size(8.dp))
                     Text(
                         text = "Your answers stay on this device and only guide you toward next steps.",
                         color = DisclaimerColor,
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        lineHeight = 20.sp
                     )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 Text(
                     text = "Screening aid only — not a diagnosis. When in doubt, call 911.",
                     color = DisclaimerColor,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
-                    lineHeight = 18.sp,
+                    lineHeight = 20.sp,
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 condition.footnote?.let { footnote ->
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
                     Text(
                         text = footnote,
                         color = DisclaimerColor,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
-                        lineHeight = 18.sp
+                        lineHeight = 20.sp
                     )
                 }
             }
@@ -353,14 +349,12 @@ private fun WaitingTipCard(
     accentColor: Color
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 170.dp),
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = accentColor.copy(alpha = 0.06f))
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 28.dp),
+            modifier = Modifier.padding(14.dp),
             verticalAlignment = Alignment.Top
         ) {
             Icon(
@@ -368,23 +362,23 @@ private fun WaitingTipCard(
                 contentDescription = null,
                 tint = accentColor,
                 modifier = Modifier
-                    .size(28.dp)
+                    .size(20.dp)
                     .padding(top = 2.dp)
             )
             Spacer(modifier = Modifier.size(8.dp))
             Column {
                 Text(
                     text = "While you wait",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = accentColor
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(3.dp))
                 Text(
                     text = tip,
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 30.sp
+                    lineHeight = 21.sp
                 )
             }
         }
@@ -427,7 +421,7 @@ private fun EmergencyShortcut() {
         Spacer(modifier = Modifier.size(8.dp))
         Text(
             text = "Not sure? You can call 911 at any time.",
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.error.copy(alpha = pulseAlpha)
         )
@@ -441,6 +435,7 @@ private fun QuestionAnswerControls(
     options: List<String>,
     currentAnswer: QuestionAnswer?,
     accentColor: Color,
+    isLastQuestion: Boolean,
     onYesNo: (Boolean) -> Unit,
     onSingleSelect: (String) -> Unit,
     onToggleMultiSelect: (String) -> Unit,
@@ -478,18 +473,23 @@ private fun QuestionAnswerControls(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            // On the last question, the screen's own "Check now" button already
+            // handles submission — showing a second "Continue" button here would
+            // be a redundant control that silently does nothing when tapped.
+            if (!isLastQuestion) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
-                onClick = onConfirmMultiSelect,
-                enabled = currentAnswer != null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
-                shape = RoundedCornerShape(14.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = accentColor)
-            ) {
-                Text("Continue")
+                Button(
+                    onClick = onConfirmMultiSelect,
+                    enabled = currentAnswer != null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = accentColor)
+                ) {
+                    Text("Continue")
+                }
             }
         }
     }

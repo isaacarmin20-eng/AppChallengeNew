@@ -74,7 +74,7 @@ enum class CategoryIcon {
 }
 
 private val EmergencyCategories = listOf(
-    EmergencyCategory("Face/Speech Changes", CategoryIcon.FaceSpeech),
+    EmergencyCategory("Face/Speech Changes", CategoryIcon.FaceSpeech, conditionId = "stroke"),
     EmergencyCategory("Trouble Breathing", CategoryIcon.Breathing),
     EmergencyCategory("Allergic Reaction", CategoryIcon.AllergicReaction),
     EmergencyCategory("Heat Illness", CategoryIcon.HeatIllness),

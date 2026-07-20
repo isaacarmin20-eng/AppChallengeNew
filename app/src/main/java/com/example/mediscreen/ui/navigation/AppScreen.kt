@@ -5,8 +5,6 @@ import java.io.Serializable
 
 sealed interface AppScreen : Serializable {
 
-    val conditionId: String
-
     data object Home : AppScreen
 
     data class Questionnaire(

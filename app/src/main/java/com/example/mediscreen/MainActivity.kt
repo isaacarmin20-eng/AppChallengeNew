@@ -35,9 +35,11 @@ class MainActivity : ComponentActivity() {
                         HomeScreen(
                             onCategorySelected = { conditionId ->
 
-                                // Later you'll change Stroke to navigate
-                                // to CameraScreen instead of Questionnaire.
-                                currentScreen = AppScreen.Questionnaire(conditionId)
+                                currentScreen = if (conditionId == "stroke") {
+                                    AppScreen.Camera(conditionId)
+                                } else {
+                                    AppScreen.Questionnaire(conditionId)
+                                }
                             }
                         )
                     }
@@ -105,13 +107,9 @@ class MainActivity : ComponentActivity() {
 
                     is AppScreen.Camera -> {
                         CameraScreen(
-                            conditionId = currentScreen.conditionId,
-                            onNavigateBack = {
-                                currentScreen = AppScreen.Home
-                            },
-                            onAnalysisReady = { payload ->
-                                currentScreen = AppScreen.Result(payload)
-                            }
+                            conditionId = screen.conditionId,  // Use 'screen' instead of 'currentScreen'
+                            onNavigateBack = { currentScreen = AppScreen.Home },
+                            onAnalysisReady = { payload -> currentScreen = AppScreen.Result(payload) }
                         )
                     }
 

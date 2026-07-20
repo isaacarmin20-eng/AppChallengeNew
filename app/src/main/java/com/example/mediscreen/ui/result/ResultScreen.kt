@@ -40,6 +40,7 @@ import com.example.mediscreen.data.model.ResultPayload
 
 private val EmergencyRed = Color(0xFFD32F2F)
 private val CautionAmber = Color(0xFFF57C00)
+private val ReassuranceGreen = Color(0xFF2E7D32)
 private val DisclaimerColor = Color(0xFF66737C)
 
 private val PhoneNumberRegex = Regex("""\b1?[-\s]?\(?\d{3}\)?[-\s]?\d{3}[-\s]?\d{4}\b""")
@@ -56,8 +57,13 @@ fun ResultScreen(
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
-    val headerColor = if (payload.urgent) EmergencyRed else CautionAmber
-    val headerText = if (payload.urgent) "Seek emergency care now" else "Monitor closely and seek care if needed"
+    val headerColor = when {
+        payload.urgent -> EmergencyRed
+        payload.resultHeadline != null -> ReassuranceGreen
+        else -> CautionAmber
+    }
+    val headerText = payload.resultHeadline
+        ?: if (payload.urgent) "Seek emergency care now" else "Monitor closely and seek care if needed"
 
     Scaffold(
         topBar = {

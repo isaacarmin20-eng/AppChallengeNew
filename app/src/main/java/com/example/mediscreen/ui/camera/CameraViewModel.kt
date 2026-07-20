@@ -52,6 +52,10 @@ class CameraViewModel : ViewModel() {
         _uiState.value = _uiState.value.copy(isCapturing = capturing)
     }
 
+    fun reset() {
+        _uiState.value = CameraUiState(permissionGranted = _uiState.value.permissionGranted)
+    }
+
     fun isReadyToSubmit(): Boolean {
         val s = _uiState.value
         return s.faceImagePath != null && s.armsImagePath != null && s.speechText.isNotBlank()

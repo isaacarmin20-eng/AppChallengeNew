@@ -4,7 +4,8 @@ package com.example.mediscreen.ui.camera
 
 import android.Manifest
 import android.content.Context
-import android.graphics.Color as AndroidColor
+import android.content.Intent
+import android.net.Uri
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,20 +37,53 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.mediscreen.data.ConditionCatalog
+import com.example.mediscreen.BuildConfig
 import com.example.mediscreen.data.model.ResultPayload
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import com.example.mediscreen.data.vision.LaptopVisionProxyClient
+import com.example.mediscreen.data.vision.StrokeScreeningAnalysis
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
 import java.util.concurrent.Executor
+import kotlinx.coroutines.launch
 
 // Stroke theme color
 private val StrokeRed = Color(0xFFD64550)
 
-@OptIn(ExperimentalPermissionsApi::class)
+private fun strokeResult(
+    conditionId: String,
+    analysis: StrokeScreeningAnalysis
+): ResultPayload {
+    val urgent = analysis.concerning || analysis.uncertain
+    val observation = analysis.observations.joinToString(separator = " ")
+    return ResultPayload(
+        urgent = urgent,
+        conditionId = conditionId,
+        displayName = "Face/Speech Changes (Stroke)",
+        instructions = if (urgent) {
+            listOf(
+                "Call 911 immediately — don't wait to see if symptoms improve.",
+                "Keep the person calm and still. Do not give them food or water.",
+                "Note the time symptoms started — paramedics will need this.",
+                "If they lose consciousness and stop breathing, begin CPR if trained."
+            )
+        } else {
+            listOf(
+                "No obvious FAST warning signs were identified in these images and the speech observation.",
+                "This is a screening result, not a diagnosis. If symptoms begin, persist, worsen, or you are unsure, call 911."
+            )
+        },
+        seekCareMessage = buildString {
+            append(
+                if (urgent) "A possible warning sign or uncertainty was reported by the local screening. "
+                else "This is a screening result, not a diagnosis. "
+            )
+            if (observation.isNotBlank()) append("Visual feedback: $observation")
+        },
+        resultHeadline = if (!urgent) "No obvious warning signs identified" else null
+    )
+}
+
 @Composable
 fun CameraScreen(
     conditionId: String,
@@ -58,21 +93,37 @@ fun CameraScreen(
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val analysisClient = remember { LaptopVisionProxyClient(BuildConfig.VISION_PROXY_URL) }
+    val coroutineScope = rememberCoroutineScope()
+    var isAnalyzing by remember { mutableStateOf(false) }
+    var analysisError by remember { mutableStateOf<String?>(null) }
 
-    val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA) { granted ->
+    var cloudConsentGranted by rememberSaveable { mutableStateOf(false) }
+
+    if (!cloudConsentGranted) {
+        AlertDialog(
+            onDismissRequest = onNavigateBack,
+            title = { Text("Cloud image analysis") },
+            text = { Text("The face and arm photos plus your speech observation will be sent to the configured cloud AI service for this screening. They are not used for diagnosis. Continue only if you consent.") },
+            confirmButton = { TextButton(onClick = { cloudConsentGranted = true }) { Text("Continue") } },
+            dismissButton = { TextButton(onClick = onNavigateBack) { Text("Cancel") } }
+        )
+    }
+
+    val cameraPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         viewModel.onPermissionResult(granted)
     }
 
     LaunchedEffect(Unit) {
-        if (cameraPermission.status.isGranted) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
             viewModel.onPermissionResult(true)
         } else {
-            cameraPermission.launchPermissionRequest()
+            cameraPermission.launch(Manifest.permission.CAMERA)
         }
     }
 
     Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-        if (uiState.permissionGranted) {
+        if (cloudConsentGranted && uiState.permissionGranted) {
             when (uiState.currentStep) {
                 CaptureStep.FACE, CaptureStep.ARMS -> {
                     CameraPreviewWithOverlay(
@@ -95,7 +146,10 @@ fun CameraScreen(
                             )
                             viewModel.setCapturing(true)
                         },
-                        onNavigateBack = onNavigateBack
+                        onNavigateBack = {
+                            viewModel.reset()
+                            onNavigateBack()
+                        }
                     )
                 }
                 CaptureStep.SPEECH -> {
@@ -103,31 +157,42 @@ fun CameraScreen(
                         speechText = uiState.speechText,
                         onTextChanged = viewModel::onSpeechTextChanged,
                         onSubmit = {
-                            // Phase C: real AI call goes here
-                            // For now, pass a mock ResultPayload
-                            val mockPayload = ResultPayload(
-                                urgent = true,
-                                conditionId = conditionId,
-                                displayName = "Face/Speech Changes (Stroke)",
-                                instructions = listOf(
-                                    "Call 911 immediately — don't wait to see if symptoms improve.",
-                                    "Keep the person calm and still. Do not give them food or water.",
-                                    "Note the time symptoms started — paramedics will need this.",
-                                    "If they lose consciousness and stop breathing, begin CPR if trained."
-                                ),
-                                seekCareMessage = "Signs of stroke were detected. Every minute matters — call 911 now."
-                            )
-                            onAnalysisReady(mockPayload)
+                            coroutineScope.launch {
+                                isAnalyzing = true
+                                analysisError = null
+                                runCatching {
+                                    analysisClient.analyzeStroke(
+                                        faceImagePath = requireNotNull(uiState.faceImagePath),
+                                        armsImagePath = requireNotNull(uiState.armsImagePath),
+                                        speechObservation = uiState.speechText
+                                    )
+                                }.onSuccess { analysis ->
+                                    val result = strokeResult(conditionId, analysis)
+                                    viewModel.reset()
+                                    onAnalysisReady(result)
+                                }.onFailure { error ->
+                                    analysisError = error.message ?: "The local AI check could not be completed."
+                                }
+                                isAnalyzing = false
+                            }
                         },
                         isReady = viewModel.isReadyToSubmit(),
-                        onNavigateBack = onNavigateBack
+                        isAnalyzing = isAnalyzing,
+                        analysisError = analysisError,
+                        onNavigateBack = {
+                            viewModel.reset()
+                            onNavigateBack()
+                        }
                     )
                 }
             }
-        } else {
+        } else if (cloudConsentGranted) {
             PermissionDeniedScreen(
-                onRequestAgain = { cameraPermission.launchPermissionRequest() },
-                onNavigateBack = onNavigateBack
+                onRequestAgain = { cameraPermission.launch(Manifest.permission.CAMERA) },
+                onNavigateBack = {
+                    viewModel.reset()
+                    onNavigateBack()
+                }
             )
         }
     }
@@ -297,7 +362,7 @@ private fun CameraPreviewWithOverlay(
             Spacer(Modifier.height(16.dp))
 
             // Persistent 911 shortcut
-            TextButton(onClick = { /* dial 911 */ }) {
+            TextButton(onClick = { launchEmergencyDialer(context) }) {
                 Text("Not sure? Call 911 now", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp)
             }
         }
@@ -310,8 +375,11 @@ private fun SpeechInputStep(
     onTextChanged: (String) -> Unit,
     onSubmit: () -> Unit,
     isReady: Boolean,
+    isAnalyzing: Boolean,
+    analysisError: String?,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -385,11 +453,21 @@ private fun SpeechInputStep(
             shape = RoundedCornerShape(12.dp)
         )
 
+        if (analysisError != null) {
+            Spacer(Modifier.height(12.dp))
+            Text(
+                text = analysisError,
+                color = Color(0xFFFFB4AB),
+                fontSize = 13.sp,
+                textAlign = TextAlign.Center
+            )
+        }
+
         Spacer(Modifier.weight(1f))
 
         Button(
             onClick = onSubmit,
-            enabled = isReady,
+            enabled = isReady && !isAnalyzing,
             modifier = Modifier.fillMaxWidth().height(56.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
@@ -398,7 +476,11 @@ private fun SpeechInputStep(
             )
         ) {
             Text(
-                if (isReady) "Analyze Symptoms" else "Complete all steps to continue",
+                when {
+                    isAnalyzing -> "Checking locally…"
+                    isReady -> "Analyze Symptoms"
+                    else -> "Complete all steps to continue"
+                },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White
@@ -407,10 +489,14 @@ private fun SpeechInputStep(
 
         Spacer(Modifier.height(12.dp))
 
-        TextButton(onClick = { /* dial 911 */ }) {
+        TextButton(onClick = { launchEmergencyDialer(context) }) {
             Text("Not sure? Call 911 now", color = Color.White.copy(alpha = 0.6f), fontSize = 13.sp)
         }
     }
+}
+
+private fun launchEmergencyDialer(context: Context) {
+    context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:911")))
 }
 
 @Composable
@@ -422,7 +508,7 @@ private fun PermissionDeniedScreen(onRequestAgain: () -> Unit, onNavigateBack: (
     ) {
         Text("Camera Access Needed", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         Spacer(Modifier.height(12.dp))
-        Text("MediScreen needs camera access to capture photos for the visual symptom check. No photos are stored or shared.", color = Color.White.copy(alpha = 0.6f), textAlign = TextAlign.Center, fontSize = 14.sp)
+        Text("MediScreen needs camera access to capture photos for the visual symptom check. Photos are kept temporarily in app cache and sent only to your configured local AI server.", color = Color.White.copy(alpha = 0.6f), textAlign = TextAlign.Center, fontSize = 14.sp)
         Spacer(Modifier.height(32.dp))
         Button(onClick = onRequestAgain, colors = ButtonDefaults.buttonColors(containerColor = StrokeRed), modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(12.dp)) {
             Text("Grant Camera Access", fontWeight = FontWeight.Bold)
@@ -441,10 +527,7 @@ private fun capturePhoto(
     onCaptured: (String) -> Unit,
     onError: () -> Unit
 ) {
-    val photoFile = File(
-        context.cacheDir,
-        "mediscreen_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}.jpg"
-    )
+    val photoFile = File.createTempFile("mediscreen_", ".jpg", context.cacheDir)
     val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
     imageCapture.takePicture(outputOptions, executor, object : ImageCapture.OnImageSavedCallback {
         override fun onImageSaved(output: ImageCapture.OutputFileResults) {

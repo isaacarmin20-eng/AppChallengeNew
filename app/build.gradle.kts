@@ -4,6 +4,12 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// 10.0.2.2 routes an Android emulator to the development machine. Physical
+// devices can override this with -PollamaBaseUrl=http://LAPTOP_LAN_IP:11434.
+val visionProxyUrl = providers.gradleProperty("visionProxyUrl")
+    .orElse("http://127.0.0.1:8080")
+    .get()
+
 android {
     namespace = "com.example.mediscreen"
     compileSdk = 35
@@ -14,10 +20,12 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "VISION_PROXY_URL", "\"$visionProxyUrl\"")
     }
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     compileOptions {
@@ -43,6 +51,10 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.6")
+    implementation("androidx.camera:camera-core:1.4.1")
+    implementation("androidx.camera:camera-camera2:1.4.1")
+    implementation("androidx.camera:camera-lifecycle:1.4.1")
+    implementation("androidx.camera:camera-view:1.4.1")
     debugImplementation("androidx.compose.ui:ui-tooling")
 
     testImplementation("junit:junit:4.13.2")
